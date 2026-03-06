@@ -1,8 +1,11 @@
 """
-Stunning AI Chatbot Frontend with Streamlit
-Powered by LangChain + Ollama
+Streamlit Frontend Code for AI Chatbot
+=======================================
+
+File: app.py (640 lines)
 """
 
+# ===== IMPORTS =====
 import streamlit as st
 import sys
 import os
@@ -15,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for stunning UI
+# ===== CUSTOM CSS (Lines 19-417) =====
 st.markdown("""
 <style>
     /* Import Google Fonts */
@@ -33,24 +36,20 @@ st.markdown("""
     }
 
     /* Base styles */
-    * {
-        font-family: 'Outfit', sans-serif;
-    }
+    * { font-family: 'Outfit', sans-serif; }
 
-    /* Main background with animated gradient */
+    /* Main background */
     .stApp {
         background: var(--dark-gradient);
         min-height: 100vh;
     }
 
-    /* Floating orbs background effect */
+    /* Floating orbs background */
     .stApp::before {
         content: '';
         position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
         background:
             radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
             radial-gradient(circle at 80% 20%, rgba(240, 147, 251, 0.12) 0%, transparent 50%),
@@ -59,17 +58,15 @@ st.markdown("""
         z-index: 0;
     }
 
-    /* Title styling */
+    /* Title */
     .main-title {
         font-size: 3rem;
         font-weight: 700;
         background: linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        background-clip: text;
         text-align: center;
         padding: 20px 0 10px;
-        margin-bottom: 10px;
         animation: titleGlow 3s ease-in-out infinite;
     }
 
@@ -95,32 +92,18 @@ st.markdown("""
         z-index: 1;
     }
 
-    /* Message bubbles with glassmorphism */
+    /* Message bubbles */
     .chat-message {
         padding: 18px 24px;
         border-radius: 20px;
         margin: 14px 0;
-        position: relative;
-        animation: messageSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         backdrop-filter: blur(10px);
-    }
-
-    @keyframes messageSlide {
-        from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
     }
 
     .chat-message.user {
         background: var(--primary-gradient);
         color: white;
         margin-left: 80px;
-        border-bottom-right-radius: 4px;
         box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
     }
 
@@ -129,34 +112,10 @@ st.markdown("""
         border: 1px solid var(--glass-border);
         color: var(--text-primary);
         margin-right: 80px;
-        border-bottom-left-radius: 4px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    /* Avatar badges */
-    .chat-message .avatar {
-        position: absolute;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .chat-message.user .avatar {
-        left: -60px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-    }
-
-    .chat-message.assistant .avatar {
-        right: -60px;
-        background: linear-gradient(135deg, #f093fb, #f5576c);
-    }
-
-    /* Input area styling */
+    /* Input styling */
     .stChatInputContainer {
         background: var(--glass-bg) !important;
         border: 1px solid var(--glass-border) !important;
@@ -169,14 +128,10 @@ st.markdown("""
         box-shadow: 0 0 30px rgba(102, 126, 234, 0.3) !important;
     }
 
-    /* Sidebar styling */
+    /* Sidebar */
     section[data-testid="stSidebar"] {
         background: rgba(15, 15, 35, 0.95) !important;
         border-right: 1px solid var(--glass-border);
-    }
-
-    .sidebar-content {
-        padding: 20px;
     }
 
     /* Cards */
@@ -193,7 +148,6 @@ st.markdown("""
     .feature-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
-        border-color: rgba(102, 126, 234, 0.3);
     }
 
     /* Buttons */
@@ -203,19 +157,13 @@ st.markdown("""
         border-radius: 25px !important;
         padding: 12px 28px !important;
         font-weight: 600 !important;
-        font-size: 14px !important;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: all 0.3s ease !important;
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
     }
 
     .stButton > button:hover {
         transform: translateY(-3px) !important;
         box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5) !important;
-    }
-
-    .stButton > button[kind="secondary"] {
-        background: var(--glass-bg) !important;
-        border: 1px solid var(--glass-border) !important;
     }
 
     /* Metrics */
@@ -264,92 +212,8 @@ st.markdown("""
     }
 
     @keyframes pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
+        0%, 100% { opacity: 1; }
         50% { opacity: 0.6; transform: scale(1.2); }
-    }
-
-    /* Spinner */
-    .stSpinner > div {
-        border-color: rgba(102, 126, 234, 0.3) !important;
-        border-top-color: #667eea !important;
-    }
-
-    /* Divider */
-    hr {
-        border-color: var(--glass-border);
-        margin: 20px 0;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--primary-gradient);
-        border-radius: 3px;
-    }
-
-    /* Toast notifications */
-    .stToast {
-        background: var(--glass-bg) !important;
-        border: 1px solid var(--glass-border) !important;
-    }
-
-    /* Code blocks in messages */
-    pre {
-        background: rgba(0, 0, 0, 0.3) !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-        border: 1px solid var(--glass-border) !important;
-    }
-
-    code {
-        font-family: 'Space Code', monospace !important;
-        color: #f093fb !important;
-    }
-
-    /* Animation for new messages */
-    div[data-testid="stChatMessage"] {
-        animation: fadeInUp 0.4s ease-out;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Typing indicator */
-    .typing-indicator {
-        display: flex;
-        gap: 5px;
-        padding: 15px 20px;
-    }
-
-    .typing-indicator span {
-        width: 10px;
-        height: 10px;
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 50%;
-        animation: typing 1.4s infinite;
-    }
-
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-        0%, 100% { transform: translateY(0); opacity: 0.6; }
-        50% { transform: translateY(-8px); opacity: 1; }
     }
 
     /* Welcome screen */
@@ -412,44 +276,44 @@ st.markdown("""
     .suggestion-chip:hover {
         background: var(--primary-gradient);
         color: white;
-        border-color: transparent;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-gradient);
+        border-radius: 3px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Import chatbot functions
+# ===== BACKEND IMPORTS =====
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 
-
-# ===== Initialize LLM =====
+# ===== LLM INITIALIZATION =====
 @st.cache_resource
 def get_llm():
-    """Initialize the LLM - cached to avoid recreation"""
     return ChatOllama(
         model="minimax-m2.5:cloud",
         temperature=0.7,
     )
 
-
 def get_prompt():
-    """Create the prompt template"""
     return ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful, friendly AI assistant. Provide clear and informative responses."),
+        ("system", "You are a helpful, friendly AI assistant."),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{question}"),
     ])
 
-
-# Initialize LLM and chain
 llm = get_llm()
 prompt = get_prompt()
 chain = prompt | llm | StrOutputParser()
 
-
-# ===== Session State Management =====
+# ===== SESSION STATE =====
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -458,17 +322,13 @@ if "messages" not in st.session_state:
 
 MAX_TURNS = 5
 
-
-# ===== Chat Function =====
+# ===== CHAT FUNCTION =====
 def chat(question: str) -> tuple[str, bool]:
-    """Process a chat message and return (response, success)"""
     current_turns = len(st.session_state.chat_history) // 2
 
     if current_turns >= MAX_TURNS:
         return (
-            "🔴 **Context window is full!**\n\n"
-            "The conversation has reached its maximum length. "
-            "Please click **'Clear Chat'** to start a fresh conversation.",
+            "Context window is full! Please click 'Clear Chat' to start fresh.",
             False
         )
 
@@ -478,33 +338,27 @@ def chat(question: str) -> tuple[str, bool]:
             "chat_history": st.session_state.chat_history,
         })
 
-        # Add to history
         st.session_state.chat_history.append(HumanMessage(content=question))
         st.session_state.chat_history.append(AIMessage(content=response))
 
-        # Check if approaching limit
         remaining = MAX_TURNS - (current_turns + 1)
         warning = ""
         if remaining <= 2:
-            warning = f"\n\n⚠️ **Heads up:** Only **{remaining}** turn(s) left before context is full."
+            warning = f"\n\nHeads up: Only {remaining} turn(s) left."
 
         return response + warning, True
 
     except Exception as e:
-        return f"❌ **Error:** {str(e)}", False
-
+        return f"Error: {str(e)}", False
 
 def clear_chat():
-    """Clear all chat history"""
     st.session_state.chat_history = []
     st.session_state.messages = []
 
-
-# ===== Sidebar =====
+# ===== SIDEBAR =====
 with st.sidebar:
-    st.markdown("### ✨ AI Assistant")
+    st.markdown("### AI Assistant")
 
-    # Status indicator
     st.markdown("""
     <div class="status-indicator">
         <span class="status-dot"></span>
@@ -514,17 +368,13 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Model info card
     st.markdown("""
     <div class="feature-card">
-        <h4 style="margin: 0 0 10px 0;">🤖 Model</h4>
-        <p style="margin: 0; color: #a0a0b0; font-size: 0.9rem;">
-            minimax-m2.5:cloud
-        </p>
+        <h4>Model</h4>
+        <p style="color: #a0a0b0;">minimax-m2.5:cloud</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Stats
     turns_used = len(st.session_state.chat_history) // 2
     turns_left = MAX_TURNS - turns_used
 
@@ -539,101 +389,76 @@ with st.sidebar:
     with col2:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value" style="{('color: #ff6b6b;' if turns_left <= 2 else '')}">{turns_left}</div>
+            <div class="metric-value" style="{'color: #ff6b6b;' if turns_left <= 2 else ''}">{turns_left}</div>
             <div class="metric-label">Turns Left</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # Controls
-    st.markdown("### 🎮 Controls")
-
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    st.markdown("### Controls")
+    if st.button("Clear Chat", use_container_width=True):
         clear_chat()
         st.rerun()
 
     st.markdown("---")
+    st.info("Max 5 conversation turns")
 
-    # Tips
-    st.markdown("### 💡 Tips")
-    st.info("""
-    • Start a conversation by typing below
-    • Click 'Clear Chat' to reset memory
-    • Maximum 5 conversation turns
-    """)
-
-
-# ===== Main Content =====
-# Title
+# ===== MAIN CONTENT =====
 st.markdown("""
-<div class="main-title">✨ AI Chat Assistant</div>
+<div class="main-title">AI Chat Assistant</div>
 <div class="subtitle">Powered by LangChain & Ollama</div>
 """, unsafe_allow_html=True)
 
-
-# ===== Chat Container =====
 st.markdown('<div class="chat-wrapper">', unsafe_allow_html=True)
 
-# Display messages or welcome screen
+# Welcome screen
 if not st.session_state.messages:
-    # Welcome screen
-    st.markdown(f"""
+    st.markdown("""
     <div class="welcome-card">
         <div class="welcome-icon">👋</div>
         <div class="welcome-title">Welcome!</div>
         <div class="welcome-text">
-            I'm your AI assistant, ready to help with any questions you have.
-            Just type your message below and I'll respond instantly.
+            I'm your AI assistant. Just type your message below!
         </div>
         <div class="suggestion-chips">
-            <div class="suggestion-chip" onclick="document.querySelector('input').value='Hello! What can you help me with?'; document.querySelector('input').focus();">
-                👋 Say Hello
-            </div>
-            <div class="suggestion-chip" onclick="document.querySelector('input').value='Tell me about yourself'; document.querySelector('input').focus();">
-                ℹ️ About You
-            </div>
-            <div class="suggestion-chip" onclick="document.querySelector('input').value='What is Python?'; document.querySelector('input').focus();">
-                ❓ Ask Question
-            </div>
+            <div class="suggestion-chip" onclick="document.querySelector('input').value='Hello!'; document.querySelector('input').focus();">👋 Say Hello</div>
+            <div class="suggestion-chip" onclick="document.querySelector('input').value='Tell me about yourself'; document.querySelector('input').focus();">ℹ️ About You</div>
+            <div class="suggestion-chip" onclick="document.querySelector('input').value='What is Python?'; document.querySelector('input').focus();">❓ Ask Question</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# Chat messages
+# Display messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar="👤" if message["role"] == "user" else "🤖"):
         st.markdown(message["content"])
 
 # Chat input
-if prompt := st.chat_input("Type your message here...", key="chat_input"):
-    # Add user message
+if prompt := st.chat_input("Type your message here..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
-    # Get AI response
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Thinking..."):
             response, success = chat(prompt)
         st.markdown(response)
 
-    # Add assistant response
     st.session_state.messages.append({"role": "assistant", "content": response})
 
-    # Show warning if approaching limit
     if success:
         turns_left = MAX_TURNS - (len(st.session_state.chat_history) // 2)
         if turns_left <= 2:
-            st.toast(f"⚠️ Only {turns_left} turn(s) left!", icon="⚠️")
+            st.toast(f"Only {turns_left} turn(s) left!")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ===== Footer =====
+# Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #606070; font-size: 0.8rem; padding: 20px;">
-    Built with ❤️ using Streamlit • LangChain • Ollama
+<div style="text-align: center; color: #606070; font-size: 0.8rem;">
+    Built with Streamlit • LangChain • Ollama
 </div>
 """, unsafe_allow_html=True)
